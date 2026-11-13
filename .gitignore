@@ -1,0 +1,39 @@
+# data & experiment outputs (never commit)
+data/
+VisA/
+VisA_pytorch/
+results/
+results_*/
+checkpoints/
+runs/
+*.log
+*.tiff
+*.npy
+
+# course materials / private notes (not redistributed)
+*.pdf
+translations/
+
+# environments & IDE
+.vscode/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# secret / tool state (never commit)
+.conda/
+.workbuddy/
+.codebuddy/
+.aau_token
+
+
+# private notes
+references/*.md
+
