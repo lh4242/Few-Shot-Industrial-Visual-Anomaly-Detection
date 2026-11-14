@@ -37,3 +37,7 @@ Thumbs.db
 # private notes
 references/*.md
 
+
+# local visual inspection exports
+local_inspect/
+

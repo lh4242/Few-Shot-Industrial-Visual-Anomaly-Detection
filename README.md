@@ -170,12 +170,79 @@ Observations:
 - AnomalyDINO's advantage is largest at 1 shot (94.61 vs 57.44) and its seed variance is an
   order of magnitude smaller, which is the stability the few-shot regime needs.
 
-Timing was measured while both methods ran on the same shared machine and is therefore
-contaminated by CPU contention; the efficiency table has to be re-measured on an idle server
-before it is reported.
+### Reproduction fidelity
 
-Raw outputs: `results/baseline_full.json`, `results/anomalydino_full.json` (not committed,
-regenerate with the two scripts above).
+Pointing the official `run_anomalydino.py` at the reference pool (`1cls_fs`, so that its index-based
+sampling picks exactly the protocol's references) reproduces the in-memory evaluator on all six
+classes, 1 shot, seed 0:
+
+| Class | Official script | `run_anomalydino_mem.py` | Delta |
+| --- | --- | --- | --- |
+| candle | 90.36 | 90.36 | 0.000 |
+| capsules | 98.78 | 98.78 | 0.000 |
+| cashew | 92.90 | 92.90 | 0.000 |
+| chewinggum | 98.26 | 98.26 | 0.000 |
+| fryum | 94.52 | 94.52 | 0.000 |
+| pipe_fryum | 92.88 | 92.88 | 0.000 |
+
+### Efficiency (A6000, candle, 60 images after 20 warm-up)
+
+| Shots | Memory bank | Median latency | Peak GPU |
+| --- | --- | --- | --- |
+| 1 | 0.8 s | 154.5 ms/img | 112.8 MB |
+| 4 | 1.8 s | 143.2 ms/img | 112.8 MB |
+| 8 | 2.8 s | 161.5 ms/img | 112.8 MB |
+
+Resolution 448, batch 1. The latency includes reading, preprocessing, the forward pass, masked kNN,
+`mean_top1p` and building the 448 px map; the upstream timer (76 ms/sample) excludes map
+post-processing, so the two numbers are not directly comparable.
+
+### Why the template baseline stays near chance
+
+Three ablations, all at 1 shot / seed 0, six classes (image AUROC %):
+
+| Aggregator over the map | Mean | | Difference channel | Mean |
+| --- | --- | --- | --- | --- |
+| 99.5th percentile (used) | 56.7 | | `1 - SSIM` | 56.5 |
+| max | 53.4 | | RGB | 53.1 |
+| mean of top 1% | 56.1 | | grey | 52.7 |
+| 99.5th / median | 39.3 | | gradient | 50.4 |
+
+No aggregator and no single channel rescues the method, so the loss is in the representation, not in
+the scoring. Splitting by class reveals two different failure modes:
+
+| Class | mean(map in GT) - mean(map outside GT) | per-image pixel AUROC | avg defect area |
+| --- | --- | --- | --- |
+| candle | +0.189 | 72.1 | 540 px |
+| capsules | +0.081 | 68.5 | 1053 px |
+| fryum | +0.230 | 81.4 | 6936 px |
+| pipe_fryum | +0.521 | 93.9 | 3760 px |
+| cashew | -0.185 | 23.9 | 3387 px |
+| chewinggum | -0.105 | 38.3 | 1702 px |
+
+For four classes the defect is highlighted locally but the *image-level* statistic is swamped by
+global pose/background differences (exactly the failure the assignment predicts). For `cashew` and
+`chewinggum` the map is inverted: the object silhouette differs more than the defect, so pixel-level
+AUROC drops below chance.
+
+The calibrated demo threshold also transfers poorly: the 95th percentile computed on the 20
+calibration images yields a 20.6 % false-positive rate on the test split (60 % for `candle`), i.e. the
+calibration and test score distributions differ. This is reported as a limitation and feeds the
+reliability discussion, not hidden behind a tuned threshold.
+
+### Demo
+
+```bash
+python scripts/demo.py --anomalydino-root /path/to/AnomalyDINO \
+    --data-root /path/to/VisA_pytorch/1cls --protocol configs/refs.json \
+    --class-name candle --shot 1 --seed 0 --image path/to/product.JPG --out demo_out
+```
+
+Prints the image score, the calibrated threshold and the OK/NG verdict, and writes a heatmap overlay,
+the raw map and a `result.json`.
+
+Raw outputs: `results/baseline_full.json`, `results/anomalydino_full.json`,
+`results/efficiency.json` (not committed, regenerate with the scripts above).
 
 ## Repository layout
 
