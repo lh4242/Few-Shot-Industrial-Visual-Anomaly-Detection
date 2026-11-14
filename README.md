@@ -253,23 +253,53 @@ not a lack of information in the images. `cashew` reproduces the same inverted l
 template difference (image 96.40 but pixel 34.85): the model reconstructs the defect as part of the
 texture.
 
-### Optional extension: AnomalyCLIP (Part 2) - not run
+### Optional extension: AnomalyCLIP (Part 2)
 
-Deliberately skipped, with the reasons recorded here:
+**Regime: zero-shot.** AnomalyCLIP needs no reference images, so this row is *not* comparable with the
+1/2/4/8-shot rows and is reported separately.
 
-- the upstream README distributes pretrained weights through Google Drive only, which the course
-  server cannot reach (connection fails);
-- the GitHub tarball truncates at ~7.6 MB over this network and `git clone` fails with
-  `GnuTLS recv error`, although individual files can be fetched from `raw.githubusercontent.com`;
-- a third-party mirror (`SMU-MaLA-Lab/AnomalyCLIP`) exposes an unlabelled
-  `AnomalyCLIP_epoch_15.pth` (22.6 MB). The official `test.sh` evaluates **MVTec** with a checkpoint
-  trained **on VisA** (`9_12_4_multiscale/epoch_15.pth`), so an unlabelled `epoch_15.pth` may well be
-  the VisA-trained model; evaluating it on VisA would leak. The assignment requires disclosing the
-  checkpoint's training data, which cannot be verified for this file.
+**Checkpoint and its training data (disclosure).** The upstream `test.sh` pairs
+`checkpoints/9_12_4_multiscale_visa/epoch_15.pth` with `--dataset visa`, while
+`checkpoints/9_12_4_multiscale/epoch_15.pth` is paired with `--dataset mvtec`. The complementary
+pairing (VisA-trained weights for MVTec, and vice versa) is how the authors evaluate the unseen
+dataset, and the paper states the model is trained once on MVTec AD. We therefore use
+`9_12_4_multiscale_visa/epoch_15.pth` as the **MVTec-trained, VisA-evaluated** checkpoint. Both
+variants ship inside the official repository (648 MB), so no third-party weights are involved.
 
-Skipping is preferable to reporting a zero-shot number of unknown provenance. The infrastructure to
-plug such a model into `src/metrics.py` already exists, so the extension can be added later if a
-checkpoint with documented provenance becomes available.
+**Official metrics** (`test.py`, their `metrics.py`, AUPRO included):
+
+| Class | Image AUROC | Pixel AUROC | AUPRO |
+| --- | --- | --- | --- |
+| candle | 80.9 | 98.8 | 96.5 |
+| capsules | 82.8 | 95.0 | 78.9 |
+| cashew | 76.0 | 93.8 | 91.9 |
+| chewinggum | 97.2 | 99.3 | 90.9 |
+| fryum | 92.7 | 94.6 | 86.9 |
+| pipe_fryum | 92.3 | 98.2 | 96.2 |
+| **Mean** | **87.0** | **96.6** | **90.2** |
+
+**Our metrics** (`scripts/run_anomalyclip_mem.py`, same `src/metrics.py` as every other row, maps
+resampled to 448 px, AUPRO not recomputed):
+
+| Class | Image AUROC | Pixel AUROC |
+| --- | --- | --- |
+| candle | 80.94 | 98.93 |
+| capsules | 82.78 | 95.28 |
+| cashew | 75.96 | 93.67 |
+| chewinggum | 97.22 | 99.35 |
+| fryum | 92.70 | 94.60 |
+| pipe_fryum | 92.28 | 98.14 |
+| **Mean** | **86.98** | **96.66** |
+
+The two evaluations agree to within 0.3 points, i.e. resampling the maps to 448 px changes nothing
+material, and the zero-shot row can be placed in the same table as the few-shot rows without a
+metric-definition caveat.
+
+Practical notes for reproducing on a locked-down network: the CLIP backbone
+(`ViT-L/14@336px`, 934 MB) downloads from `openaipublic.azureedge.net` (reachable here), while
+`AnomalyCLIP_lib/model_load.py` hard-codes a `/remote-home/...` cache directory that has to be
+repointed. The upstream `Dataset` also requires a `meta.json` describing the test split; ours is
+generated for the six classes.
 
 ### Demo
 
