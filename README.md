@@ -53,6 +53,45 @@ numbers away from the paper.
 On the course server the environment lives in `/tmp/yzhang176/envs/ad` and can be rebuilt with
 `scripts/server/setup_env.sh`. `scripts/server/run_ad.sh` wraps the common runs.
 
+## Few-shot protocol (shared references)
+
+AnomalyDINO samples references deterministically by index slicing of the sorted
+normal training list: `sorted(train/good)[seed*shot : (seed+1)*shot]`.
+The course protocol additionally reserves the **first 20 sorted normal images per
+class** for threshold calibration and excludes them from every reference
+selection. Slicing the full list would hand out calibration images, so both
+methods draw from a shifted pool:
+
+```
+pool = sorted(train/good)[20:]
+refs = pool[seed*shot : (seed+1)*shot]
+```
+
+`scripts/make_refs.py` records the exact file names in `configs/refs.json` and can
+materialise two symlinked views, `1cls_fs/` (pool only) and `calib/`, so that the
+unmodified AnomalyDINO training path stays inside the pool:
+
+```bash
+python scripts/make_refs.py --data-root /path/VisA_pytorch/1cls \
+    --out configs/refs.json --materialise /path/VisA_pytorch
+```
+
+Then point `--data_root` at `/path/VisA_pytorch/1cls_fs`. Because the sampling
+rule is unchanged, AnomalyDINO picks exactly the files listed in `refs.json`.
+
+## Part 1 baseline: template difference
+
+```bash
+python scripts/run_baseline.py --data-root /path/VisA_pytorch/1cls \
+    --protocol configs/refs.json --out results/baseline.json
+```
+
+Per (class, shot, seed) the baseline resizes everything to 448 px, optionally
+aligns with ECC, and takes the pixel-wise maximum over four difference channels
+(RGB, grey, gradient magnitude, `1 - SSIM`). The map is smoothed and
+morphologically cleaned; the image score is its maximum, the decision threshold
+is the 95th percentile of the 20 calibration images.
+
 ## Reproducing AnomalyDINO
 
 Official code: <https://github.com/dammsi/AnomalyDINO> (WACV 2025).
