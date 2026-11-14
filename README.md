@@ -230,6 +230,47 @@ calibration images yields a 20.6 % false-positive rate on the test split (60 % f
 calibration and test score distributions differ. This is reported as a limitation and feeds the
 reliability discussion, not hidden behind a tuned threshold.
 
+### Optional extension: convolutional autoencoder (Part 1)
+
+Not a few-shot method: the autoencoder is trained on **200 normal training images per class**
+(the 20 calibration images are excluded) and its reconstruction error is the anomaly map. Training:
+20 epochs, 256 px input, 7-10 s per class on an A6000; inference 18-30 ms/image. Maps are resampled to
+448 px before scoring so that the evaluation code is identical to the other rows.
+
+| Class | Image AUROC | Pixel AUROC |
+| --- | --- | --- |
+| candle | 52.73 | 81.73 |
+| capsules | 78.12 | 89.98 |
+| cashew | 96.40 | 34.85 |
+| chewinggum | 78.34 | 64.67 |
+| fryum | 84.36 | 75.92 |
+| pipe_fryum | 58.86 | 94.84 |
+| **Mean** | **74.80** | **73.67** |
+
+With two orders of magnitude more normal data the autoencoder clearly beats the template baseline
+(+17.4 image AUROC), which supports the reading that the baseline's weakness is representational and
+not a lack of information in the images. `cashew` reproduces the same inverted localisation seen with
+template difference (image 96.40 but pixel 34.85): the model reconstructs the defect as part of the
+texture.
+
+### Optional extension: AnomalyCLIP (Part 2) - not run
+
+Deliberately skipped, with the reasons recorded here:
+
+- the upstream README distributes pretrained weights through Google Drive only, which the course
+  server cannot reach (connection fails);
+- the GitHub tarball truncates at ~7.6 MB over this network and `git clone` fails with
+  `GnuTLS recv error`, although individual files can be fetched from `raw.githubusercontent.com`;
+- a third-party mirror (`SMU-MaLA-Lab/AnomalyCLIP`) exposes an unlabelled
+  `AnomalyCLIP_epoch_15.pth` (22.6 MB). The official `test.sh` evaluates **MVTec** with a checkpoint
+  trained **on VisA** (`9_12_4_multiscale/epoch_15.pth`), so an unlabelled `epoch_15.pth` may well be
+  the VisA-trained model; evaluating it on VisA would leak. The assignment requires disclosing the
+  checkpoint's training data, which cannot be verified for this file.
+
+Skipping is preferable to reporting a zero-shot number of unknown provenance. The infrastructure to
+plug such a model into `src/metrics.py` already exists, so the extension can be added later if a
+checkpoint with documented provenance becomes available.
+
 ### Demo
 
 ```bash
