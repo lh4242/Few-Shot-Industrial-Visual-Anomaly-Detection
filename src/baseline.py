@@ -95,6 +95,7 @@ class TemplateBaseline:
     smooth_sigma: float = 4.0
     morph_kernel: int = 3
     use_ecc: bool = False
+    border_crop: int = 32
     score_percentile: float = 99.5
     ecc_max_iter: int = 50
     ref_images: List[np.ndarray] = field(default_factory=list)
@@ -123,10 +124,23 @@ class TemplateBaseline:
         dists = [self._difference(image, ref) for ref in refs]
         anomaly_map = np.minimum.reduce(dists) if len(dists) > 1 else dists[0]
         anomaly_map = self._postprocess(anomaly_map)
-        score = float(np.percentile(anomaly_map, self.score_percentile))
+        score = float(np.percentile(self.crop(anomaly_map), self.score_percentile))
         return score, anomaly_map
 
     # --------------------------------------------------------------- helpers
+    def crop(self, array: np.ndarray) -> np.ndarray:
+        """Drop the border, where resizing and SSIM edge effects dominate.
+
+        The same crop is applied to anomaly maps and ground-truth masks so that
+        pixel-level metrics never see the artefact-prone margin (and are not
+        inflated by trivially correct border pixels).
+        """
+        b = self.border_crop
+        if not b:
+            return array
+        h, w = array.shape[:2]
+        return array[b : h - b, b : w - b]
+
     def _difference(self, image: np.ndarray, ref: np.ndarray) -> np.ndarray:
         if self.use_ecc:
             # align the reference to the test image (both already resized)
@@ -191,11 +205,12 @@ def evaluate_class(
     size: int = 448,
     features: Sequence[str] = DEFAULT_FEATURES,
     use_ecc: bool = False,
+    border_crop: int = 32,
     max_test_images: Optional[int] = None,
 ) -> Dict:
     """Run the baseline on one (class, shot, seed) condition and return metrics."""
     model = TemplateBaseline(
-        size=size, features=features, use_ecc=use_ecc
+        size=size, features=features, use_ecc=use_ecc, border_crop=border_crop
     ).fit([os.path.join(data_root, class_name, "train", "good", f) for f in refs])
     model.calibrate(
         [os.path.join(data_root, class_name, "train", "good", f) for f in calibration]
@@ -226,8 +241,8 @@ def evaluate_class(
             gt_path = (
                 os.path.join(gt_dir, os.path.splitext(fname)[0] + ".png") if label else None
             )
-            maps.append(amap)
-            masks.append(read_mask(gt_path, size))
+            maps.append(model.crop(amap))
+            masks.append(model.crop(read_mask(gt_path, size)))
             scores.append(score)
             labels.append(label)
             records.append(

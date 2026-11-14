@@ -35,6 +35,12 @@ def main() -> None:
     parser.add_argument("--features", nargs="+", default=list(DEFAULT_FEATURES))
     parser.add_argument("--ecc", action="store_true", help="enable ECC euclidean alignment")
     parser.add_argument(
+        "--border-crop",
+        type=int,
+        default=32,
+        help="ignore this many border pixels (resizing/SSIM edge artefacts) in scoring and pixel metrics",
+    )
+    parser.add_argument(
         "--max-test-images",
         type=int,
         default=None,
@@ -66,6 +72,7 @@ def main() -> None:
                     size=args.size,
                     features=args.features,
                     use_ecc=args.ecc,
+                    border_crop=args.border_crop,
                     max_test_images=args.max_test_images,
                 )
                 all_results.append(result)
@@ -106,6 +113,7 @@ def main() -> None:
             "size": args.size,
             "features": args.features,
             "ecc": args.ecc,
+            "border_crop": args.border_crop,
             "data_root": args.data_root,
             "protocol": args.protocol,
         },

@@ -84,6 +84,7 @@ def test_baseline_separates_synthetic_defects(synthetic_root):
         calibration=info["calibration"],
         size=SIZE,
         use_ecc=False,
+        border_crop=0,
     )
     assert result["num_test"] == 12
     assert result["num_anomalous"] == 6
