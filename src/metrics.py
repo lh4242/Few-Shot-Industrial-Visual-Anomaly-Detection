@@ -10,6 +10,14 @@ Course protocol:
 Both metrics are implemented here so that the template baseline, the
 AnomalyDINO reproduction and the improved method go through exactly the same
 code.
+
+Attribution:
+  * AUROC / AP are taken from ``sklearn.metrics`` (no reimplementation);
+  * the metric definition and the MVTec-style evaluation convention follow
+    Bergmann et al., "MVTec AD", CVPR 2019 (bib key ``bergmann2019mvtec``);
+  * the VisA protocol (all test images, including defect-free ones, are used
+    for pixel-level evaluation) follows Zou et al., ECCV 2022
+    (bib key ``zou2022spotdiff``).
 """
 
 from __future__ import annotations

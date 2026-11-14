@@ -142,3 +142,26 @@ docs/              figures and notes
 - AUPRO is optional; if reported, the official 0.30 FPR cap must be used.
 - `--eval_segm` writes full-resolution anomaly maps (~11 GB for the six-class set) and the AUPRO
   computation is slow; run pixel-level evaluation per class or with a streaming variant.
+
+## References and attribution
+
+Every dataset, pretrained model, external repository and borrowed implementation component used by
+this repository is listed here. BibTeX keys refer to `references/Project2_references.bib`.
+
+| Used for | Source | Key |
+| --- | --- | --- |
+| Dataset (VisA, official `1cls` split and masks) | Zou et al., *SPot-the-Difference*, ECCV 2022 | `zou2022spotdiff` |
+| Data layout (`train/good`, `test/<type>`, `ground_truth/<type>`) | Bergmann et al., *MVTec AD*, CVPR 2019 | `bergmann2019mvtec` |
+| Part 2 method and reference-sampling rule | Damm et al., *AnomalyDINO*, WACV 2025 — <https://github.com/dammsi/AnomalyDINO> | `damm2025anomalydino` |
+| Backbone features (`dinov2_vits14`) | Oquab et al., *DINOv2*, TMLR 2024 — <https://github.com/facebookresearch/dinov2> | `oquab2024dinov2` |
+| Part 1 `1 - SSIM` difference channel | Wang et al., *Image Quality Assessment: From Error Visibility to Structural Similarity*, IEEE TIP 2004 | `wang2004ssim` |
+| Part 1 optional ECC alignment | Evangelidis & Psarakis, *Parametric Image Alignment Using Enhanced Correlation Coefficient Maximization*, IEEE TPAMI 2008 | `evangelidis2008ecc` |
+| AUROC / AP implementations | scikit-learn `sklearn.metrics` | — |
+| Image I/O, resizing, morphology, ECC | OpenCV `cv2` | — |
+| SSIM implementation | scikit-image `skimage.metrics.structural_similarity` | — |
+
+The upstream AnomalyDINO code is used unmodified except for restricting the VisA class list in
+`src/utils.py::get_dataset_info` to the six required classes, as noted in that repository's README.
+
+A complete related-work discussion citing all papers of the course reading list belongs to the
+report, not to this file.

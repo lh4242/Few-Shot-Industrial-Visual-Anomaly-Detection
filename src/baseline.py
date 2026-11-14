@@ -12,9 +12,20 @@ Design choices, all reported in the paper:
   * the anomaly map is the pixel-wise maximum over four complementary channels
     (RGB difference, grey-level difference, gradient magnitude difference and
     1 - SSIM), which is then smoothed and morphologically cleaned;
-  * the image score is the maximum of the cleaned map;
+  * the image score is the 99.5th percentile of the cleaned map;
   * the OK/NG threshold is the 95th percentile of the scores of the 20 calibration
     images, which are excluded from the reference pool.
+
+Attribution:
+  * ``1 - SSIM`` difference channel - Wang et al., "Image Quality Assessment:
+    From Error Visibility to Structural Similarity", IEEE TIP 2004
+    (bib key ``wang2004ssim``);
+  * optional ECC alignment - Evangelidis & Psarakis, "Parametric Image
+    Alignment Using Enhanced Correlation Coefficient Maximization",
+    IEEE TPAMI 2008 (bib key ``evangelidis2008ecc``);
+  * MVTec-style data layout - Bergmann et al., "MVTec AD", CVPR 2019
+    (bib key ``bergmann2019mvtec``); VisA itself - Zou et al., ECCV 2022
+    (bib key ``zou2022spotdiff``).
 """
 
 from __future__ import annotations
