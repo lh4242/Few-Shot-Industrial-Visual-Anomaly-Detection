@@ -94,8 +94,8 @@ class TemplateBaseline:
     features: Sequence[str] = DEFAULT_FEATURES
     smooth_sigma: float = 4.0
     morph_kernel: int = 3
-    use_ecc: bool = True
-    score_percentile: float = 100.0
+    use_ecc: bool = False
+    score_percentile: float = 99.5
     ecc_max_iter: int = 50
     ref_images: List[np.ndarray] = field(default_factory=list)
     ref_paths: List[str] = field(default_factory=list)
@@ -190,7 +190,7 @@ def evaluate_class(
     calibration: Sequence[str],
     size: int = 448,
     features: Sequence[str] = DEFAULT_FEATURES,
-    use_ecc: bool = True,
+    use_ecc: bool = False,
     max_test_images: Optional[int] = None,
 ) -> Dict:
     """Run the baseline on one (class, shot, seed) condition and return metrics."""

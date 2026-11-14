@@ -33,7 +33,7 @@ def main() -> None:
     parser.add_argument("--classes", nargs="+", default=None)
     parser.add_argument("--size", type=int, default=448)
     parser.add_argument("--features", nargs="+", default=list(DEFAULT_FEATURES))
-    parser.add_argument("--no-ecc", action="store_true", help="disable ECC alignment")
+    parser.add_argument("--ecc", action="store_true", help="enable ECC euclidean alignment")
     parser.add_argument(
         "--max-test-images",
         type=int,
@@ -65,7 +65,7 @@ def main() -> None:
                     calibration=info["calibration"],
                     size=args.size,
                     features=args.features,
-                    use_ecc=not args.no_ecc,
+                    use_ecc=args.ecc,
                     max_test_images=args.max_test_images,
                 )
                 all_results.append(result)
@@ -105,7 +105,7 @@ def main() -> None:
         "config": {
             "size": args.size,
             "features": args.features,
-            "ecc": not args.no_ecc,
+            "ecc": args.ecc,
             "data_root": args.data_root,
             "protocol": args.protocol,
         },
