@@ -66,9 +66,8 @@ def main() -> None:
                     size=args.size,
                     features=args.features,
                     use_ecc=not args.no_ecc,
+                    max_test_images=args.max_test_images,
                 )
-                if args.max_test_images:
-                    result["num_test"] = min(result["num_test"], args.max_test_images)
                 all_results.append(result)
                 print(
                     f"{class_name:12s} {key:14s} image AUROC={result['image_auroc']*100:6.2f} "

@@ -117,9 +117,8 @@ class TemplateBaseline:
     # ------------------------------------------------------------- inference
     def predict(self, path: str, align: Optional[bool] = None) -> Tuple[float, np.ndarray]:
         image = read_rgb(path, self.size)
-        use_ecc = self.use_ecc if align is None else align
-        refs = [_align(self.ref_images[0], image, self.ecc_max_iter)] if use_ecc else []
-        refs = refs or self.ref_images
+        # alignment (if enabled) happens inside _difference, once per reference
+        refs = self.ref_images
 
         dists = [self._difference(image, ref) for ref in refs]
         anomaly_map = np.minimum.reduce(dists) if len(dists) > 1 else dists[0]
@@ -192,6 +191,7 @@ def evaluate_class(
     size: int = 448,
     features: Sequence[str] = DEFAULT_FEATURES,
     use_ecc: bool = True,
+    max_test_images: Optional[int] = None,
 ) -> Dict:
     """Run the baseline on one (class, shot, seed) condition and return metrics."""
     model = TemplateBaseline(
@@ -215,7 +215,10 @@ def evaluate_class(
     for sub, label in ((test_good_dir, 0), (test_bad_dir, 1)):
         if not os.path.isdir(sub):
             continue
-        for fname in list_images(sub):
+        files = list_images(sub)
+        if max_test_images:
+            files = files[:max_test_images]
+        for fname in files:
             start = time.perf_counter()
             score, amap = model.predict(os.path.join(sub, fname))
             times.append(time.perf_counter() - start)
